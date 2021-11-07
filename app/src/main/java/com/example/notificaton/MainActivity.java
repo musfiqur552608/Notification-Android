@@ -6,9 +6,9 @@ import static com.example.notificaton.App.CHANNEL_2_ID;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.RemoteInput;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -19,11 +19,16 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.view.View;
 import android.widget.EditText;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
     private NotificationManagerCompat notificationManagerCompat;
     private EditText title, message;
     private MediaSessionCompat mediaSessionCompat;
+
+    static List<Message> MESSAGES = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +42,10 @@ public class MainActivity extends AppCompatActivity {
 
         mediaSessionCompat = new MediaSessionCompat(this, "tag");
 
+        MESSAGES.add(new Message("Good Mornoing!", "Sayed"));
+        MESSAGES.add(new Message("Hello", null));
+        MESSAGES.add(new Message("Hi!", "Sayed"));
+
     }
 
     public void sendChannel1(View v) {
@@ -46,21 +55,44 @@ public class MainActivity extends AppCompatActivity {
         PendingIntent contentIntent = PendingIntent.getActivity(this,
                 0, activityIntent, 0);
 
-        Intent broadcastIntent = new Intent(this, NotificationReceiver.class);
+        Intent broadcastIntent = new Intent(this, DirectReplyReceiver.class);
         broadcastIntent.putExtra("toastMessage", message1);
         PendingIntent actionIntent = PendingIntent.getBroadcast(this,
                 0, broadcastIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Bitmap picture = BitmapFactory.decodeResource(getResources(), R.drawable.dog);
+        RemoteInput remoteInput = new RemoteInput.Builder("key_text_reply")
+                .setLabel("Your answer...")
+                .build();
+
+        Intent replayIntent = new Intent(this, DirectReplyReceiver.class);
+        PendingIntent replayPendingIntent = PendingIntent.getBroadcast(this,
+                0,replayIntent,0);
+
+        NotificationCompat.Action replayAction = new NotificationCompat.Action.Builder(
+                R.drawable.ic_reply,
+                "reply",
+                replayPendingIntent
+        ).addRemoteInput(remoteInput).build();
+
+        NotificationCompat.MessagingStyle messagingStyle =
+                new NotificationCompat.MessagingStyle("Me");
+        messagingStyle.setConversationTitle("Group Chat");
+
+        for (Message chatMessage : MESSAGES){
+            NotificationCompat.MessagingStyle.Message notificationMessage =
+                    new NotificationCompat.MessagingStyle.Message(
+                            chatMessage.getText(),
+                            chatMessage.getTimestamp(),
+                            chatMessage.getSender()
+                    );
+            messagingStyle.addMessage(notificationMessage);
+        }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_one)
-                .setContentTitle(title1)
-                .setContentText(message1)
-                .setLargeIcon(picture)
-                .setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigPicture(picture)
-                        .bigLargeIcon(null))
+                .setStyle(messagingStyle)
+                .addAction(replayAction)
+                .setColor(Color.BLUE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setContentIntent(contentIntent)
