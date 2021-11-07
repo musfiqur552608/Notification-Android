@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Notificaton</string>
+
+    <string name="long_dummy_text">
+        For years, wolves and dogs were considered separate species: canis familiaris and canis lupus. However, more recently, scientists generally agree they are both a sub-species of canis lupus. ... When two animals can create a fertile offspring, they are considered to be of the same species.
+    </string>
 </resources>
